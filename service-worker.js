@@ -1,0 +1,45 @@
+const CACHE_NAME = 'concrete-diagnosis-v6-20260713-shin';
+const APP_SHELL = [
+  './',
+  './index.html',
+  './manifest.webmanifest?v=20260713-shin',
+  './service-worker.js',
+  './icon-192.png?v=20260713-shin',
+  './icon-512.png?v=20260713-shin'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      const network = fetch(event.request).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() => cached);
+
+      return cached || network;
+    })
+  );
+});
