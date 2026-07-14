@@ -1,11 +1,12 @@
-const CACHE_NAME = 'concrete-diagnosis-v6-20260713-shin';
+const CACHE_NAME = 'concrete-diagnosis-v7-20260714-study';
+const ASSET_VERSION = '20260714-study-v7';
 const APP_SHELL = [
   './',
   './index.html',
-  './manifest.webmanifest?v=20260713-shin',
+  `./manifest.webmanifest?v=${ASSET_VERSION}`,
   './service-worker.js',
-  './icon-192.png?v=20260713-shin',
-  './icon-512.png?v=20260713-shin'
+  `./icon-192.png?v=${ASSET_VERSION}`,
+  `./icon-512.png?v=${ASSET_VERSION}`
 ];
 
 self.addEventListener('install', event => {
@@ -29,6 +30,21 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html') || caches.match('./')))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cached => {
       const network = fetch(event.request).then(response => {
@@ -37,9 +53,8 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         }
         return response;
-      }).catch(() => cached);
-
-      return cached || network;
+      });
+      return cached || network.catch(() => cached);
     })
   );
 });
