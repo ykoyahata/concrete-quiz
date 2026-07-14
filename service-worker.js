@@ -1,5 +1,5 @@
-const CACHE_NAME = 'concrete-diagnosis-v7-20260714-study';
-const ASSET_VERSION = '20260714-study-v7';
+const CACHE_NAME = 'concrete-diagnosis-v8-20260714-random';
+const ASSET_VERSION = '20260714-random-v8';
 const APP_SHELL = [
   './',
   './index.html',
